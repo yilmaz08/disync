@@ -1,6 +1,6 @@
 import yaml
-import json
 import copy
+
 
 class FSException(Exception):
     def __init__(self, message: str) -> None:
@@ -9,11 +9,13 @@ class FSException(Exception):
     def __str__(self) -> str:
         return self.message
 
+
 class File:
     def __init__(self, name: str, channel_id: int, parent_dir: 'Directory') -> None:
         self.name = name
         self.channel_id = channel_id
         self.parent_dir = parent_dir
+
 
 class Directory:
     def __init__(self, name: str | None, path: list, data: dict, parent: 'Directory', allow_corrupt: bool = False) -> None:
@@ -35,27 +37,30 @@ class Directory:
             else:
                 raise FSException("Corrupt directory")
 
-    # GET 
+    # GET
     def get_file(self, name: str) -> File:
         if name in self.files:
             return self.files[name]
         else:
             raise FSException("No such file")
+
     def get_directory(self, name: str) -> 'Directory':
         if name in self.directories:
             return self.directories[name]
         else:
             raise FSException("No such directory")
-        
+
     # CHECK
     def exists(self, name: str) -> bool:
         if name in self.files or name in self.directories:
             return True
         return False
+
     def is_file(self, name: str) -> bool:
         if name in self.files:
             return True
         return False
+
     def is_dir(self, name: str) -> bool:
         if name in self.directories:
             return True
@@ -64,8 +69,10 @@ class Directory:
     # LIST
     def ls_file(self) -> list:
         return list(self.files.keys())
+
     def ls_dir(self) -> list:
         return list(self.directories.keys())
+
 
 class FileSystem:
     def __init__(self, yaml_data: str, allow_corrupt: bool = False) -> None:
@@ -78,7 +85,7 @@ class FileSystem:
     # PATH
     def pwd(self) -> str:
         return f"/{"/".join(self.wd.path + ([self.wd.name] if self.wd.name is not None else []))}"
-    
+
     def resolve_path(self, path: list) -> Directory | File:
         current_dir: Directory = copy.deepcopy(self.wd)
         for i in range(len(path)):
@@ -94,14 +101,14 @@ class FileSystem:
             elif current_dir.is_dir(name):
                 current_dir = copy.deepcopy(current_dir.get_directory(name))
             elif i == len(path) - 1:
-                return current_dir.get_file(name) # file return
+                return current_dir.get_file(name)  # file return
             else:
                 raise FSException("This is a file not a directory")
-        return current_dir # directory return
+        return current_dir  # directory return
 
     def parse_path(self, path: str) -> list:
         return path.split("/")
-    
+
     def cd(self, path: str) -> None:
         path_list = self.parse_path(path)
         new_dir = self.resolve_path(path_list)
@@ -109,7 +116,7 @@ class FileSystem:
             self.wd = copy.deepcopy(new_dir)
         else:
             raise FSException("This is a file not a directory")
-    
+
     # LIST
     def ls_file(self, path: str | None) -> list:
         if path is None:
@@ -132,7 +139,7 @@ class FileSystem:
                 return new_dir.ls_dir()
             else:
                 raise FSException("This is a file not a directory")
-    
+
     # GET
     def get_file(self, path: str) -> File:
         path_list = self.parse_path(path)
@@ -141,7 +148,7 @@ class FileSystem:
             raise FSException("This is a directory not a file")
         else:
             return new_dir
-    
+
     def get_directory(self, path: str) -> Directory:
         path_list = self.parse_path(path)
         new_dir = self.resolve_path(path_list)
@@ -149,7 +156,7 @@ class FileSystem:
             return new_dir
         else:
             raise FSException("This is a file not a directory")
-        
+
     # CREATE
     def mkdir(self, path: str) -> None:
         path_list = self.parse_path(path)
@@ -173,7 +180,7 @@ class FileSystem:
             del current_dir.files[path_list[-1]]
         else:
             raise FSException("Directories cannot be removed with `rm` use `rmdir`")
-        
+
     def rmdir(self, path: str) -> None:
         path_list = self.parse_path(path)
         current_dir = self.resolve_path(path_list[:-1])
